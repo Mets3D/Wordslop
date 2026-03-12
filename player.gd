@@ -1,27 +1,34 @@
 class_name Player
+extends Node
 
-"""
-There is no local multi-player, so the player is not instanced.
-Instead, all its variables and functions are static.
-"""
+var score_ui: Label
+var typed_word_ui: HBoxContainer
+var hand_ui: HBoxContainer
 
-static var hand_tiles: Array[LetterTile] = []
+func _init(ui_hand: HBoxContainer, ui_typed_word: HBoxContainer, ui_score: Label):
+	hand_ui = ui_hand
+	typed_word_ui = ui_typed_word
+	score_ui = ui_score
 
-static func new_hand_letters(num_letters: int, parent_node: Control) -> Array[LetterTile]:
+var NUM_LETTERS = 12
+var hand_tiles: Array[LetterTile] = []
+const WORD_LIST = preload("res://resources/word_list_parsed.gd").WORD_LIST
+
+func new_hand_letters(num_letters: int) -> Array[LetterTile]:
 	clear_hand()
 
 	var chosen_letters = get_random_letters__min_1_vowel(num_letters)
 	for i in range(num_letters):
-		hand_tiles.append(LetterTile.add_new_to_ui(chosen_letters[i], parent_node))
+		hand_tiles.append(LetterTile.add_new_to_ui(chosen_letters[i], self.hand_ui))
 	return hand_tiles
 
-static func clear_hand():
+func clear_hand():
 	"""Remove all tiles from the player's hand."""
 	for letter_tile in hand_tiles:
 		letter_tile.queue_free()
 	hand_tiles.clear()
 
-static func get_random_letters__min_1_vowel(num_letters: int) -> Array[String]:
+func get_random_letters__min_1_vowel(num_letters: int) -> Array[String]:
 	"""Return some random unique letters with at least 1 vowel.
 	NOTE: Additional rules could be added, like not providing a Q without a U.
 	"""
@@ -33,3 +40,28 @@ static func get_random_letters__min_1_vowel(num_letters: int) -> Array[String]:
 		for i in range(num_letters):
 			chosen_letters.append(shuffled_alphabet[i])
 	return chosen_letters
+
+func handle_input(event):
+	if event.is_action_pressed("ui_accept"):  # Space/Enter
+		var typed_word = get_typed_word()
+		if typed_word in WORD_LIST:
+			new_hand_letters(NUM_LETTERS)
+			for child in self.typed_word_ui.get_children():
+				child.queue_free()
+			print(typed_word, " is apparently a real word, gj.")
+		else:
+			print(typed_word, " not in word list...?")
+
+	if event.is_action_pressed("ui_text_backspace") and len(self.typed_word_ui.get_children()) > 0:
+		self.typed_word_ui.get_child(-1).queue_free()
+	
+	for letter in hand_tiles:
+		if event.is_pressed() and (event.as_text() == letter.text):
+			letter.click_highlight()
+			LetterTile.add_new_to_ui(event.as_text(), self.typed_word_ui)
+
+func get_typed_word() -> String:
+	var word = ""
+	for letter_tile: Label in self.typed_word_ui.get_children():
+		word += letter_tile.text
+	return word.to_lower()

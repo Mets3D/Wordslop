@@ -17,11 +17,12 @@ const SPACING := 12
 
 const DEFAULT_TILE_SIZE := Vector2(65, 100)
 
-func _init(letter_text: String):
-	text = letter_text.to_upper()
+func _init(letter_str: String):
+	text = letter_str.to_upper()
 	size = DEFAULT_TILE_SIZE
 	custom_minimum_size = DEFAULT_TILE_SIZE
 	pivot_offset = size / 2.0
+	var score: int = LETTER_SCORES[letter_str]
 
 	horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
