@@ -14,7 +14,7 @@ const LETTER_SCORES := {
 }
 const VOWELS: Array[String] = ["A", "E", "I", "O", "U", "Y"]
 const SPACING := 12
-
+var score: int = 1
 const DEFAULT_TILE_SIZE := Vector2(65, 100)
 
 func _init(letter_str: String):
@@ -22,7 +22,7 @@ func _init(letter_str: String):
 	size = DEFAULT_TILE_SIZE
 	custom_minimum_size = DEFAULT_TILE_SIZE
 	pivot_offset = size / 2.0
-	var score: int = LETTER_SCORES[letter_str]
+	score = LETTER_SCORES[letter_str]
 
 	horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vertical_alignment   = VERTICAL_ALIGNMENT_CENTER

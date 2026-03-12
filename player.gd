@@ -4,11 +4,13 @@ extends Node
 var score_ui: Label
 var typed_word_ui: HBoxContainer
 var hand_ui: HBoxContainer
+var score: int
 
 func _init(ui_hand: HBoxContainer, ui_typed_word: HBoxContainer, ui_score: Label):
 	hand_ui = ui_hand
 	typed_word_ui = ui_typed_word
 	score_ui = ui_score
+	score = 0
 
 var NUM_LETTERS = 12
 var hand_tiles: Array[LetterTile] = []
@@ -43,22 +45,36 @@ func get_random_letters__min_1_vowel(num_letters: int) -> Array[String]:
 
 func handle_input(event):
 	if event.is_action_pressed("ui_accept"):  # Space/Enter
-		var typed_word = get_typed_word()
-		if typed_word in WORD_LIST:
-			new_hand_letters(NUM_LETTERS)
-			for child in self.typed_word_ui.get_children():
-				child.queue_free()
-			print(typed_word, " is apparently a real word, gj.")
-		else:
-			print(typed_word, " not in word list...?")
+		submit_typed_word()
 
-	if event.is_action_pressed("ui_text_backspace") and len(self.typed_word_ui.get_children()) > 0:
-		self.typed_word_ui.get_child(-1).queue_free()
-	
-	for letter in hand_tiles:
-		if event.is_pressed() and (event.as_text() == letter.text):
-			letter.click_highlight()
+	if event.is_action_pressed("ui_text_backspace"):
+		backspace()
+
+	type_letter(event)
+
+func type_letter(event):
+	for letter_tile in hand_tiles:
+		if event.is_pressed() and (event.as_text() == letter_tile.text):
+			letter_tile.click_highlight()
 			LetterTile.add_new_to_ui(event.as_text(), self.typed_word_ui)
+
+func backspace():
+	if len(self.typed_word_ui.get_children()) > 0:
+		self.typed_word_ui.get_child(-1).queue_free()
+
+func submit_typed_word():
+	var typed_word = get_typed_word()
+	if typed_word in WORD_LIST:
+		var word_score = 0
+		new_hand_letters(NUM_LETTERS)
+		for child in self.typed_word_ui.get_children():
+			word_score += child.score
+			child.queue_free()
+		self.score += word_score
+		self.score_ui.text = str(self.score).pad_zeros(5)
+		print(typed_word, " is apparently a real word, gj.")
+	else:
+		print(typed_word, " not in word list...?")
 
 func get_typed_word() -> String:
 	var word = ""
