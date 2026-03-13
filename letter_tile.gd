@@ -1,4 +1,5 @@
-class_name LetterTile extends Label
+class_name LetterTile
+extends Label
 
 const ALPHABET: Array[String] = [
 	"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L",
@@ -14,8 +15,20 @@ const LETTER_SCORES := {
 }
 const VOWELS: Array[String] = ["A", "E", "I", "O", "U", "Y"]
 const SPACING := 12
-var score: int = 1
 const DEFAULT_TILE_SIZE := Vector2(65, 100)
+var score: int = 1
+var anim_state: String = "None"
+
+@export var default_scale := Vector2.ONE
+@export var default_color := Color(1,1,1)
+
+@export var hover_scale := Vector2(1.15, 1.15)
+@export var hover_color := Color(0.889, 0.704, 0.282, 1.0)
+@export var hover_tween_time := 0.05
+
+@export var click_color := Color(0.8, 0.773, 0.0, 1.0)
+@export var click_scale := Vector2(2, 2)
+@export var click_tween_time := 0.2
 
 func _init(letter_str: String):
 	text = letter_str.to_upper()
@@ -49,14 +62,50 @@ func _init(letter_str: String):
 	add_theme_stylebox_override("normal", style)
 	modulate = Color(1,1,1,1)
 
-func click_highlight() -> void:
-	var tween = create_tween()
-	tween.set_parallel()
+func _ready() -> void:
+	mouse_filter = MOUSE_FILTER_STOP   # important — makes it receive mouse events
+	mouse_default_cursor_shape = CURSOR_POINTING_HAND   # optional: hand cursor
+	mouse_entered.connect(_hover_start)
+	mouse_exited.connect(_hover_end)
 
-	self.modulate = Color.YELLOW
-	tween.tween_property(self, "modulate", Color.WHITE, 0.2)
-	self.scale = Vector2(2, 2)
-	tween.tween_property(self, "scale", Vector2(1, 1), 0.2)
+func click_highlight() -> void:
+	if self.anim_state == "CLICK":
+		return
+	self.anim_state = "CLICK"
+	var tween = create_tween().set_parallel()
+	tween.tween_property(self, "modulate", self.modulate, click_tween_time)
+	tween.tween_property(self, "scale", self.scale, click_tween_time)
+	self.modulate = click_color
+	self.scale = click_scale
+
+	await tween.finished
+	tween.kill()
+	self.anim_state = "NONE"
+
+func _hover_start() -> void:
+	if self.anim_state in ["HOVER_START", "HOVER_END"]:
+		return
+	self.anim_state = "HOVER_START"	
+
+	var tween = create_tween().set_parallel()
+	tween.tween_property(self, "scale", hover_scale, hover_tween_time)
+	tween.tween_property(self, "modulate", hover_color, hover_tween_time)
+
+	await tween.finished
+	tween.kill()
+	self.anim_state = "HOVERED"
+
+func _hover_end() -> void:
+	if self.anim_state in ["HOVER_END"]:
+		return
+	self.anim_state = "HOVER_END"	
+	var tween = create_tween().set_parallel()
+	tween.tween_property(self, "scale", default_scale, hover_tween_time)
+	tween.tween_property(self, "modulate", default_color, hover_tween_time)
+
+	await tween.finished
+	tween.kill()
+	self.anim_state = "NONE"
 
 static func add_new_to_ui(letter_str: String, parent_node: Control) -> LetterTile:
 	var letter_tile = LetterTile.new(letter_str)

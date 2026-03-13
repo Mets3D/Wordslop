@@ -5,6 +5,7 @@ extends Node2D
 @onready var typed_word_ui: HBoxContainer = $UI/TypedWord_HBox
 @onready var score_ui: Label = $UI/Score
 var player: Player = null
+const MAX_WORD_LENGTH = 15
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:

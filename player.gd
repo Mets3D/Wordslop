@@ -1,6 +1,8 @@
 class_name Player
 extends Node
 
+const Globals = preload("res://main.gd")
+
 var score_ui: Label
 var typed_word_ui: HBoxContainer
 var hand_ui: HBoxContainer
@@ -47,12 +49,14 @@ func handle_input(event):
 	if event.is_action_pressed("ui_accept"):  # Space/Enter
 		submit_typed_word()
 
-	if event.is_action_pressed("ui_text_backspace"):
+	if event.is_action_pressed("ui_text_backspace", true):
 		backspace()
 
 	type_letter(event)
 
 func type_letter(event):
+	if len(self.typed_word_ui.get_children()) >= Globals.MAX_WORD_LENGTH:
+		return
 	for letter_tile in hand_tiles:
 		if event.is_pressed() and (event.as_text() == letter_tile.text):
 			letter_tile.click_highlight()
