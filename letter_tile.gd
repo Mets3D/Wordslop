@@ -1,6 +1,8 @@
 class_name LetterTile
 extends Label
 
+const Globals = preload("res://main.gd")
+
 const ALPHABET: Array[String] = [
 	"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L",
 	"M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
@@ -17,8 +19,13 @@ const VOWELS: Array[String] = ["A", "E", "I", "O", "U", "Y"]
 const SPACING := 12
 const DEFAULT_TILE_SIZE := Vector2(65, 100)
 var score: int = 1
-var anim_state: String = "None"
 
+var player: Player
+
+### ANIMATION - These should probably be moved to an inherited class (or interface)
+
+var active_tweens: Dictionary = {}
+var is_hovered: bool = false
 @export var default_scale := Vector2.ONE
 @export var default_color := Color(1,1,1)
 
@@ -30,12 +37,17 @@ var anim_state: String = "None"
 @export var click_scale := Vector2(2, 2)
 @export var click_tween_time := 0.2
 
-func _init(letter_str: String):
+@export var error_click_color := Color(0.882, 0.144, 0.275, 1.0)
+@export var error_click_scale := Vector2(1.1, 1.1)
+
+
+func _init(letter_str: String, owner_player: Player):
 	text = letter_str.to_upper()
 	size = DEFAULT_TILE_SIZE
 	custom_minimum_size = DEFAULT_TILE_SIZE
 	pivot_offset = size / 2.0
 	score = LETTER_SCORES[letter_str]
+	player = owner_player
 
 	horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
@@ -68,46 +80,75 @@ func _ready() -> void:
 	mouse_entered.connect(_hover_start)
 	mouse_exited.connect(_hover_end)
 
-func click_highlight() -> void:
-	if self.anim_state == "CLICK":
-		return
-	self.anim_state = "CLICK"
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			click_tile()
+			accept_event()
+
+func click_tile() -> void:
+	if "CLICK" in active_tweens:
+		active_tweens["CLICK"].kill()
+		active_tweens.erase("CLICK")
+
 	var tween = create_tween().set_parallel()
-	tween.tween_property(self, "modulate", self.modulate, click_tween_time)
-	tween.tween_property(self, "scale", self.scale, click_tween_time)
-	self.modulate = click_color
-	self.scale = click_scale
+	active_tweens["CLICK"] = tween
+	var goal_color = hover_color if is_hovered else default_color
+	var goal_scale = hover_scale if is_hovered else default_scale
+	tween.tween_property(self, "modulate", goal_color, click_tween_time)
+	tween.tween_property(self, "scale", goal_scale, click_tween_time)
+	var parent = self.get_parent_control()
+	if parent == player.typed_word_ui:
+		# Remove this typed letter from the typed word.
+		queue_free()
+	elif parent == player.hand_ui:
+		if len(player.typed_word_ui.get_children()) >= Globals.MAX_WORD_LENGTH:
+			self.modulate = error_click_color
+			self.scale = error_click_scale
+		else:
+			add_new_to_ui(self.text, player.typed_word_ui, player)
+
+			self.modulate = click_color
+			self.scale = click_scale
 
 	await tween.finished
 	tween.kill()
-	self.anim_state = "NONE"
+	active_tweens.erase("CLICK")
+	if goal_color == hover_color and not is_hovered:
+		_hover_end()
 
 func _hover_start() -> void:
-	if self.anim_state in ["HOVER_START", "HOVER_END"]:
+	is_hovered = true
+	if "HOVER_START" in active_tweens or "HOVER_END" in active_tweens:
 		return
-	self.anim_state = "HOVER_START"	
 
 	var tween = create_tween().set_parallel()
+	active_tweens["HOVER_START"] = tween
 	tween.tween_property(self, "scale", hover_scale, hover_tween_time)
 	tween.tween_property(self, "modulate", hover_color, hover_tween_time)
 
 	await tween.finished
 	tween.kill()
-	self.anim_state = "HOVERED"
+	active_tweens.erase("HOVER_START")
 
 func _hover_end() -> void:
-	if self.anim_state in ["HOVER_END"]:
+	is_hovered = false
+	if "HOVER_END" in active_tweens:
 		return
-	self.anim_state = "HOVER_END"	
+	var click_tween = active_tweens.get("CLICK")
+	if click_tween:
+		click_tween.kill()
+		active_tweens.erase("CLICK")
 	var tween = create_tween().set_parallel()
+	active_tweens["HOVER_END"] = tween
 	tween.tween_property(self, "scale", default_scale, hover_tween_time)
 	tween.tween_property(self, "modulate", default_color, hover_tween_time)
 
 	await tween.finished
 	tween.kill()
-	self.anim_state = "NONE"
+	active_tweens.erase("HOVER_END")
 
-static func add_new_to_ui(letter_str: String, parent_node: Control) -> LetterTile:
-	var letter_tile = LetterTile.new(letter_str)
+static func add_new_to_ui(letter_str: String, parent_node: Control, player: Player) -> LetterTile:
+	var letter_tile = LetterTile.new(letter_str, player)
 	parent_node.add_child(letter_tile)
 	return letter_tile

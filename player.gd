@@ -1,7 +1,6 @@
 class_name Player
 extends Node
 
-const Globals = preload("res://main.gd")
 
 var score_ui: Label
 var typed_word_ui: HBoxContainer
@@ -23,7 +22,9 @@ func new_hand_letters(num_letters: int) -> Array[LetterTile]:
 
 	var chosen_letters = get_random_letters__min_1_vowel(num_letters)
 	for i in range(num_letters):
-		hand_tiles.append(LetterTile.add_new_to_ui(chosen_letters[i], self.hand_ui))
+		var new_tile = LetterTile.add_new_to_ui(chosen_letters[i], self.hand_ui, self)
+		new_tile.player = self
+		hand_tiles.append(new_tile)
 	return hand_tiles
 
 func clear_hand():
@@ -55,12 +56,9 @@ func handle_input(event):
 	type_letter(event)
 
 func type_letter(event):
-	if len(self.typed_word_ui.get_children()) >= Globals.MAX_WORD_LENGTH:
-		return
 	for letter_tile in hand_tiles:
 		if event.is_pressed() and (event.as_text() == letter_tile.text):
-			letter_tile.click_highlight()
-			LetterTile.add_new_to_ui(event.as_text(), self.typed_word_ui)
+			letter_tile.click_tile()
 
 func backspace():
 	if len(self.typed_word_ui.get_children()) > 0:
