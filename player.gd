@@ -7,15 +7,15 @@ var typed_word_ui: HBoxContainer
 var hand_ui: HBoxContainer
 var score: int
 
+var NUM_LETTERS = 12
+var hand_tiles: Array[LetterTile] = []
+const WORD_LIST = preload("res://resources/word_list_parsed.gd").WORD_LIST
+
 func _init(ui_hand: HBoxContainer, ui_typed_word: HBoxContainer, ui_score: Label):
 	hand_ui = ui_hand
 	typed_word_ui = ui_typed_word
 	score_ui = ui_score
 	score = 0
-
-var NUM_LETTERS = 12
-var hand_tiles: Array[LetterTile] = []
-const WORD_LIST = preload("res://resources/word_list_parsed.gd").WORD_LIST
 
 func new_hand_letters(num_letters: int) -> Array[LetterTile]:
 	clear_hand()
@@ -69,14 +69,14 @@ func submit_typed_word():
 	if typed_word in WORD_LIST:
 		var word_score = 0
 		new_hand_letters(NUM_LETTERS)
-		for child in self.typed_word_ui.get_children():
-			word_score += child.score
-			child.queue_free()
+		for letter_tile in self.typed_word_ui.get_children():
+			word_score += letter_tile.score
+			letter_tile._tween_submit_success()
 		self.score += word_score
 		self.score_ui.text = str(self.score).pad_zeros(5)
-		print(typed_word, " is apparently a real word, gj.")
 	else:
-		print(typed_word, " not in word list...?")
+		for letter_tile in self.typed_word_ui.get_children():
+			letter_tile._tween_error()
 
 func get_typed_word() -> String:
 	var word = ""

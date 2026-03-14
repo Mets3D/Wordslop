@@ -40,6 +40,8 @@ var is_hovered: bool = false
 @export var error_click_color := Color(0.882, 0.144, 0.275, 1.0)
 @export var error_click_scale := Vector2(1.1, 1.1)
 
+@export var success_color := Color(0.26, 0.72, 0.0, 1.0)
+@export var success_scale := hover_scale
 
 func _init(letter_str: String, owner_player: Player):
 	text = letter_str.to_upper()
@@ -77,8 +79,8 @@ func _init(letter_str: String, owner_player: Player):
 func _ready() -> void:
 	mouse_filter = MOUSE_FILTER_STOP   # important — makes it receive mouse events
 	mouse_default_cursor_shape = CURSOR_POINTING_HAND   # optional: hand cursor
-	mouse_entered.connect(_hover_start)
-	mouse_exited.connect(_hover_end)
+	mouse_entered.connect(_tween_hover_start)
+	mouse_exited.connect(_tween_hover_end)
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
@@ -87,37 +89,65 @@ func _gui_input(event: InputEvent) -> void:
 			accept_event()
 
 func click_tile() -> void:
+	var parent = self.get_parent_control()
+	if parent == player.typed_word_ui:
+		# Remove this typed letter from the typed word.
+		queue_free()
+		return
+
+	if parent == player.hand_ui:
+		if len(player.typed_word_ui.get_children()) >= Globals.MAX_WORD_LENGTH:
+			_tween_error()
+		else:
+			# Add a copy of this letter tile to the typed word.
+			var new_tile = add_new_to_ui(self.text, player.typed_word_ui, player)
+			new_tile._tween_click()
+			_tween_click()
+
+func _tween_click() -> void:
+	"""Animation to play when the letter is clicked and successfully added to the typed word."""
 	if "CLICK" in active_tweens:
 		active_tweens["CLICK"].kill()
 		active_tweens.erase("CLICK")
 
 	var tween = create_tween().set_parallel()
 	active_tweens["CLICK"] = tween
+
+	self.modulate = click_color
+	self.scale = click_scale
 	var goal_color = hover_color if is_hovered else default_color
 	var goal_scale = hover_scale if is_hovered else default_scale
 	tween.tween_property(self, "modulate", goal_color, click_tween_time)
 	tween.tween_property(self, "scale", goal_scale, click_tween_time)
-	var parent = self.get_parent_control()
-	if parent == player.typed_word_ui:
-		# Remove this typed letter from the typed word.
-		queue_free()
-	elif parent == player.hand_ui:
-		if len(player.typed_word_ui.get_children()) >= Globals.MAX_WORD_LENGTH:
-			self.modulate = error_click_color
-			self.scale = error_click_scale
-		else:
-			add_new_to_ui(self.text, player.typed_word_ui, player)
-
-			self.modulate = click_color
-			self.scale = click_scale
 
 	await tween.finished
 	tween.kill()
 	active_tweens.erase("CLICK")
 	if goal_color == hover_color and not is_hovered:
-		_hover_end()
+		_tween_hover_end()
 
-func _hover_start() -> void:
+func _tween_error() -> void:
+	if "ERROR" in active_tweens:
+		active_tweens["ERROR"].kill()
+		active_tweens.erase("ERROR")
+
+	self.modulate = error_click_color
+	self.scale = error_click_scale
+
+	var tween = create_tween().set_parallel()
+	active_tweens["ERROR"] = tween
+	var goal_color = hover_color if is_hovered else default_color
+	var goal_scale = hover_scale if is_hovered else default_scale
+	tween.tween_property(self, "modulate", goal_color, click_tween_time)
+	tween.tween_property(self, "scale", goal_scale, click_tween_time)
+
+	await tween.finished
+	tween.kill()
+	active_tweens.erase("ERROR")
+	if goal_color == hover_color and not is_hovered:
+		_tween_hover_end()
+
+func _tween_hover_start() -> void:
 	is_hovered = true
 	if "HOVER_START" in active_tweens or "HOVER_END" in active_tweens:
 		return
@@ -131,7 +161,7 @@ func _hover_start() -> void:
 	tween.kill()
 	active_tweens.erase("HOVER_START")
 
-func _hover_end() -> void:
+func _tween_hover_end() -> void:
 	is_hovered = false
 	if "HOVER_END" in active_tweens:
 		return
@@ -147,6 +177,17 @@ func _hover_end() -> void:
 	await tween.finished
 	tween.kill()
 	active_tweens.erase("HOVER_END")
+
+func _tween_submit_success() -> void:
+	var tween = create_tween().set_parallel()
+	active_tweens["SUCCESS"] = tween
+	tween.tween_property(self, "scale", success_scale, click_tween_time)
+	tween.tween_property(self, "modulate", success_color, click_tween_time)
+
+	await tween.finished
+	tween.kill()
+	active_tweens.erase("SUCCESS")
+	queue_free()
 
 static func add_new_to_ui(letter_str: String, parent_node: Control, player: Player) -> LetterTile:
 	var letter_tile = LetterTile.new(letter_str, player)
