@@ -5,6 +5,23 @@
 [ext_resource type="Script" uid="uid://dt08ph6rcluk3" path="res://player.gd" id="3_h2yge"]
 [ext_resource type="Script" uid="uid://b1u4xva1x7eue" path="res://word_evaluator.gd" id="4_1bvp3"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1bvp3"]
+content_margin_left = 34.0
+content_margin_top = 29.0
+bg_color = Color(0.855782, 0.41432145, 0.7416265, 1)
+border_width_left = 13
+border_width_top = 14
+border_width_right = 15
+border_width_bottom = 18
+border_color = Color(0.7929493, 0.2754154, 0.45092952, 1)
+corner_radius_top_left = 68
+corner_radius_bottom_right = 52
+expand_margin_left = 25.0
+expand_margin_top = 25.0
+shadow_color = Color(0.31763786, 0.5805659, 0.32783914, 0.68235296)
+shadow_size = 16
+shadow_offset = Vector2(0, -1.135)
+
 [node name="Main" type="Node2D" unique_id=1017280142]
 script = ExtResource("1_ig7tw")
 
@@ -81,7 +98,7 @@ word_total_ui = NodePath("ScorePreviewTotal")
 [node name="ScoreSumTiles" type="Label" parent="UI/Player/ScorePreview_CenterContainer/WordEvaluator" unique_id=529625227]
 layout_mode = 2
 theme_override_font_sizes/font_size = 50
-text = "13"
+text = "6"
 
 [node name="ScoreMultiplySymbol" type="Label" parent="UI/Player/ScorePreview_CenterContainer/WordEvaluator" unique_id=1508531432]
 layout_mode = 2
@@ -91,7 +108,7 @@ text = "  x  "
 [node name="ScoreMultiplier" type="Label" parent="UI/Player/ScorePreview_CenterContainer/WordEvaluator" unique_id=1231533912]
 layout_mode = 2
 theme_override_font_sizes/font_size = 50
-text = "2"
+text = "3"
 
 [node name="ScoreEqualSymbol" type="Label" parent="UI/Player/ScorePreview_CenterContainer/WordEvaluator" unique_id=1516832722]
 layout_mode = 2
@@ -101,4 +118,36 @@ text = "  =  "
 [node name="ScorePreviewTotal" type="Label" parent="UI/Player/ScorePreview_CenterContainer/WordEvaluator" unique_id=1320571196]
 layout_mode = 2
 theme_override_font_sizes/font_size = 50
-text = "26"
+text = "18"
+
+[node name="Label" type="Label" parent="UI" unique_id=89987926]
+offset_left = 103.0
+offset_top = 199.0
+offset_right = 446.0
+offset_bottom = 348.0
+theme_override_font_sizes/font_size = 74
+theme_override_styles/normal = SubResource("StyleBoxFlat_1bvp3")
+text = "A"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="HBOx" type="HBoxContainer" parent="UI/Label" unique_id=415148042]
+layout_direction = 3
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 9.445007
+offset_top = -38.660004
+offset_right = 102.44501
+offset_bottom = -12.154999
+grow_vertical = 0
+pivot_offset_ratio = Vector2(1, 1)
+
+[node name="Label" type="Label" parent="UI/Label/HBOx" unique_id=2029388416]
+modulate = Color(0.26074225, 0.6371642, 0.38595343, 1)
+layout_direction = 3
+layout_mode = 2
+text = "16"
+horizontal_alignment = 2
+vertical_alignment = 2

@@ -75,6 +75,8 @@ var rest_position: Vector2
 
 var default_scale := Vector2.ONE
 var default_color := Color(1,1,1)
+var bg_color := Color(0.2, 0.2, 0.2, 0.8)
+var border_color := Color.GRAY
 
 var hover_scale := Vector2(1.15, 1.15)
 var hover_color := Color(0.889, 0.704, 0.282, 1.0)
@@ -107,12 +109,12 @@ func _init(letter_str: String):
 	add_theme_color_override("font_color", Color.WHITE)
 
 	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.2, 0.2, 0.2, 0.8)
+	style.bg_color = bg_color
 	style.border_width_left   = 3
 	style.border_width_right  = 3
 	style.border_width_top    = 3
 	style.border_width_bottom = 3
-	style.border_color = Color.GRAY
+	style.border_color = border_color
 	style.corner_radius_top_left     = 8
 	style.corner_radius_top_right    = 8
 	style.corner_radius_bottom_right = 8
@@ -123,7 +125,17 @@ func _init(letter_str: String):
 	style.content_margin_bottom = 10
 
 	add_theme_stylebox_override("normal", style)
-	modulate = Color(1,1,1,1)
+	modulate = default_color
+
+	var score_ui_container = HBoxContainer.new()
+	add_child(score_ui_container)
+	score_ui_container.layout_direction = Control.LAYOUT_DIRECTION_RTL
+	score_ui_container.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	score_ui_container.pivot_offset_ratio = Vector2.ONE
+	score_ui_container.position -= Vector2(5, 25)
+	score_ui = Label.new()
+	score_ui_container.add_child(score_ui)
+	score_ui.text = str(score)
 
 func _ready() -> void:
 	mouse_filter = MOUSE_FILTER_STOP   # important — makes it receive mouse events
