@@ -7,10 +7,10 @@ extends Node
 @export var hand_ui: HBoxContainer
 @export var word_evaluator: WordEvaluator
 
-var NUM_LETTERS = 12
 var hand_tiles: Array[LetterTile] = []
-var await_submit = false # Flag to prevent re-submitting during the submit animation (by spamming Enter key)
-var MAX_WORD_LENGTH = 15
+var await_submit = false # Flag to prevent re-submitting during the submit animation (by spamming Enter key).
+const NUM_LETTERS = 12
+const MAX_WORD_LENGTH = 15
 
 func _ready():
 	assert ((score_tracker and typed_word_ui and hand_ui and word_evaluator), "UI elements not specified for player.")
@@ -21,9 +21,9 @@ func _ready():
 
 	new_hand_letters(NUM_LETTERS)
 
+	WordListHelper.prepare_game()
 	if Engine.is_editor_hint():
 		"""Preview a word typed in inside the editor."""
-		WordListHelper._build_word_index()
 		var editor_word: String = WordListHelper.find_valid_word_with_letters(get_typed_word_str(hand_ui))
 		for letter in editor_word.split(""):
 			type_letter(letter)
@@ -68,7 +68,7 @@ func handle_input(event):
 		return
 
 	if event.is_action_pressed("ui_text_backspace", true):
-		backspace()
+		backspace(event.ctrl_pressed)
 		return
 
 	if event.is_pressed() and event.as_text() in LetterTile.ALPHABET:
@@ -110,12 +110,15 @@ func refresh_letter_states():
 
 	word_evaluator.update()
 
-func backspace():
+
+func backspace(all=false):
 	"""Remove the right-most typed letter."""
 	if len(get_typed_letter_tiles()) > 0:
-		var last = typed_word_ui.get_child(-1)
-		typed_word_ui.remove_child(last)
-		last.queue_free()
+		var killist = typed_word_ui.get_children() if all else [typed_word_ui.get_child(-1)]
+		for tile in killist:
+			typed_word_ui.remove_child(tile)
+			tile.queue_free()
+	word_evaluator.update()
 
 func attempt_word_submit():
 	"""Try to submit the currently typed word, which may succeed or fail."""

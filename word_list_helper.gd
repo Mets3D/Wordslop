@@ -3,6 +3,8 @@ class_name WordListHelper
 
 const WORD_LIST = preload("res://resources/word_list_parsed.gd").WORD_LIST
 
+static var _WORD_TREE: TrieNode
+
 # Pre-processed at startup — keys are sorted letter strings, values are word arrays
 static var _words_by_letters: Dictionary = {}
 
@@ -48,8 +50,17 @@ static func write_word_list():
 	file.store_line("]")
 	file.close()
 
+static func prepare_game():
+	_build_word_index()
+	_build_word_tree()
+
 static func is_valid_word(word: String) -> bool:
-	return word in WORD_LIST
+	return _WORD_TREE.search(word)
+
+static func _build_word_tree() -> void:
+	_WORD_TREE = TrieNode.new()
+	for word in WORD_LIST:
+		_WORD_TREE.insert(word)
 
 static func _build_word_index() -> void:
 	for word in WORD_LIST:
@@ -64,7 +75,7 @@ static func find_valid_word_with_letters(letters: String, min_length=5) -> Strin
 			for word in _words_by_letters[key]:
 				if word.length() >= min_length:
 					return word
-	return ""  # no match found
+	return ""
 
 static func _letter_key(word: String) -> String:
 	# Collapse a word to its unique sorted letters, e.g. "apple" -> "aelp"
