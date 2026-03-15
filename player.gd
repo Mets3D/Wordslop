@@ -1,21 +1,19 @@
 class_name Player
 extends Node
 
-
-var score_ui: Label
+var score_tracker: PlayerScoreTracker
 var typed_word_ui: HBoxContainer
 var hand_ui: HBoxContainer
-var score: int
 
 var NUM_LETTERS = 12
 var hand_tiles: Array[LetterTile] = []
 const WORD_LIST = preload("res://resources/word_list_parsed.gd").WORD_LIST
+var await_submit = false # Flag to prevent re-submitting during the submit animation (by spamming Enter key)
 
 func _init(ui_hand: HBoxContainer, ui_typed_word: HBoxContainer, ui_score: Label):
 	hand_ui = ui_hand
 	typed_word_ui = ui_typed_word
-	score_ui = ui_score
-	score = 0
+	score_tracker = PlayerScoreTracker.new(self, ui_score)
 
 func new_hand_letters(num_letters: int) -> Array[LetterTile]:
 	clear_hand()
@@ -47,8 +45,8 @@ func get_random_letters__min_1_vowel(num_letters: int) -> Array[String]:
 	return chosen_letters
 
 func handle_input(event):
-	if event.is_action_pressed("ui_accept"):  # Space/Enter
-		submit_typed_word()
+	if event.is_action_pressed("ui_accept") and not await_submit:  # Space/Enter
+		attempt_word_submit()
 		return
 
 	if event.is_action_pressed("ui_text_backspace", true):
@@ -64,51 +62,70 @@ func type_letter(event):
 			hand_tile.click_tile()
 	refresh_letter_states()
 
+func get_valid_word_tiles() -> Array[LetterTile]:
+	"""Return only those tiles which make a valid word (so excludes excess tiles).
+	This relies on refresh_letter_states() having been run.
+	"""
+	var tiles: Array[LetterTile] = []
+	for tile: LetterTile in get_typed_letter_tiles():
+		if tile.makes_a_word:
+			tiles.append(tile)
+	return tiles
+
 func refresh_letter_states():
-	var word = get_typed_word()
+	var word = get_typed_word_str()
 	# Find longest valid word by removing letters from the end until finding one.
 	while len(word) > 0:
 		if word in WORD_LIST:
 			break
 		# Remove last letter
 		word = word.left(-1)
-	var typed_letter_tiles = typed_word_ui.get_children()
+	var typed_letter_tiles: Array[LetterTile] = get_typed_letter_tiles()
 	for i in range(len(typed_letter_tiles)):
-		var state
-		if i < len(word):
-			typed_letter_tiles[i].makes_a_word = true
-			state = LetterTile.VisualState.WORD_PREVIEW_CORRECT
-		else:
-			typed_letter_tiles[i].makes_a_word = false
-			state = LetterTile.VisualState.NO_HOVER
-		typed_letter_tiles[i].set_visual_state(state)
+		typed_letter_tiles[i].set_word_contribute_state(i<len(word))
 
 func backspace():
-	if len(typed_word_ui.get_children()) > 0:
+	"""Remove the right-most typed letter."""
+	if len(get_typed_letter_tiles()) > 0:
 		var last = typed_word_ui.get_child(-1)
 		typed_word_ui.remove_child(last)
 		last.queue_free()
 		refresh_letter_states()
 
-func submit_typed_word():
+func attempt_word_submit():
+	"""Try to submit the currently typed word, which may succeed or fail."""
 	if is_typed_word_valid():
-		var word_score = 0
-		for letter_tile in typed_word_ui.get_children():
-			word_score += letter_tile.score
-			letter_tile._tween_submit_success()
-		score += word_score
-		score_ui.text = str(score).pad_zeros(5)
+		# Flash the typed letters which contribute to the valid word green, 
+		# and then destroy them.
+		var submit_tween: Tween
+		for letter_tile in get_typed_letter_tiles():
+			submit_tween = letter_tile.submit(letter_tile.makes_a_word)
+
+		# Add the typed word's score to the player score.
+		score_tracker.score_letter_tiles(get_valid_word_tiles())
+
+		# Get a fresh hand of letters to play with.
 		new_hand_letters(NUM_LETTERS)
+		await_submit = true
+		await submit_tween.finished
+		await_submit = false
 	else:
-		for letter_tile in typed_word_ui.get_children():
-			letter_tile._tween_error()
+		for letter_tile: LetterTile in get_typed_letter_tiles():
+			# Flash the typed word in red to indicate failure to submit.
+			letter_tile.submit(false)
 
 func is_typed_word_valid() -> bool:
-	var typed_word = get_typed_word()
+	var typed_word = get_typed_word_str()
 	return typed_word in WORD_LIST
 
-func get_typed_word() -> String:
+func get_typed_letter_tiles() -> Array[LetterTile]:
+	var tiles: Array[LetterTile]
+	tiles.assign(typed_word_ui.get_children())
+	return tiles
+
+func get_typed_word_str() -> String:
+	"""Lowercase, to match our word database."""
 	var word = ""
-	for letter_tile: Label in self.typed_word_ui.get_children():
+	for letter_tile: Label in get_typed_letter_tiles():
 		word += letter_tile.text
 	return word.to_lower()

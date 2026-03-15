@@ -39,8 +39,27 @@ enum VisualState {
 }
 
 var active_tween: Tween
-var current_visual_state: VisualState
-var is_hovered: bool = false
+var _current_visual_state: VisualState
+var current_visual_state: VisualState:
+	set(value):
+		_current_visual_state = value
+		_tween_active_stop()
+		_start_state_animation()
+	get:
+		return _current_visual_state
+
+var _is_hovered: bool = false
+var is_hovered: bool:
+	set(value):
+		_is_hovered = value
+		if _is_hovered:
+			rest_position = position
+			current_visual_state = VisualState.HOVER
+		else:
+			current_visual_state = VisualState.NO_HOVER
+	get:
+		return _is_hovered
+
 var rest_position: Vector2
 
 var default_scale := Vector2.ONE
@@ -100,8 +119,8 @@ func _init(letter_str: String, owner_player: Player):
 func _ready() -> void:
 	mouse_filter = MOUSE_FILTER_STOP   # important — makes it receive mouse events
 	mouse_default_cursor_shape = CURSOR_POINTING_HAND   # optional: hand cursor
-	mouse_entered.connect(_tween_hover_start)
-	mouse_exited.connect(_tween_hover_end)
+	mouse_entered.connect(_hover_start)
+	mouse_exited.connect(_hover_end)
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
@@ -115,42 +134,41 @@ func click_tile() -> void:
 		# Remove this typed letter from the typed word.
 		player.typed_word_ui.remove_child(self)
 		queue_free()
-		print("REMOVE LETTER!")
 		player.refresh_letter_states()
 		return
 
 	if parent == player.hand_ui:
 		if len(player.typed_word_ui.get_children()) >= Globals.MAX_WORD_LENGTH:
-			_tween_error()
+			current_visual_state = VisualState.CLICK_ERROR
 		else:
 			# Add a copy of this letter tile to the typed word.
 			var new_tile = add_new_to_ui(self.text, player.typed_word_ui, player)
-			new_tile._tween_click()
-			_tween_click()
+			new_tile.current_visual_state = VisualState.CLICK_SUCCESS
+			current_visual_state = VisualState.CLICK_SUCCESS
 
-func _tween_click() -> void:
-	set_visual_state(VisualState.CLICK_SUCCESS)
+func _hover_start():
+	is_hovered = true
+
+func _hover_end():
+	is_hovered = false
+
+func submit(success: bool) -> Tween:
+	if success:
+		current_visual_state = VisualState.WORD_SUBMIT_CORRECT
+	else:
+		current_visual_state = VisualState.CLICK_ERROR
+	return active_tween
 
 func _tween_error() -> void:
-	set_visual_state(VisualState.CLICK_ERROR)
+	current_visual_state = VisualState.CLICK_ERROR
 
-func _tween_hover_start() -> void:
-	is_hovered = true
-	rest_position = position
-	set_visual_state(VisualState.HOVER)
+func set_word_contribute_state(contributes: bool):
+	makes_a_word = contributes
+	if contributes:
+		current_visual_state = VisualState.WORD_PREVIEW_CORRECT
+	else:
+		current_visual_state = VisualState.NO_HOVER
 
-func _tween_hover_end() -> void:
-	is_hovered = false
-	set_visual_state(VisualState.NO_HOVER)
-
-func _tween_submit_success() -> void:
-	set_visual_state(VisualState.WORD_SUBMIT_CORRECT)
-
-func set_visual_state(new_state: VisualState) -> void:
-	current_visual_state = new_state
-	_tween_active_stop()
-	_start_state_animation()
-	
 func _start_state_animation() -> void:
 	active_tween = create_tween()
 	active_tween.set_parallel(true)
@@ -175,7 +193,7 @@ func _start_state_animation() -> void:
 			active_tween.tween_property(self, "scale", goal_scale, click_tween_time)
 			self.modulate = error_click_color
 			self.scale = error_click_scale
-#
+
 		VisualState.WORD_SUBMIT_CORRECT:
 			active_tween.tween_property(self, "modulate", success_color, click_tween_time)
 			active_tween.tween_property(self, "scale", success_scale, click_tween_time)
@@ -201,7 +219,7 @@ func _tween_active_stop() -> void:
 		active_tween.kill()
 		active_tween = null
 
-static func add_new_to_ui(letter_str: String, parent_node: Control, player: Player) -> LetterTile:
-	var letter_tile = LetterTile.new(letter_str, player)
+static func add_new_to_ui(letter_str: String, parent_node: Control, owner_player: Player) -> LetterTile:
+	var letter_tile = LetterTile.new(letter_str, owner_player)
 	parent_node.add_child(letter_tile)
 	return letter_tile

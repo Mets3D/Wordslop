@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://box6rjgpxrn3e"]
 
 [ext_resource type="Script" uid="uid://lgqfijb2ro1" path="res://main.gd" id="1_ig7tw"]
+[ext_resource type="Script" uid="uid://daumkrvy78o0w" path="res://player_score_tracker.gd" id="2_0xm2m"]
 
 [node name="Main" type="Node2D" unique_id=1017280142]
 script = ExtResource("1_ig7tw")
@@ -32,9 +33,13 @@ grow_horizontal = 2
 alignment = 1
 
 [node name="Score" type="Label" parent="UI" unique_id=1774975665]
-offset_left = 67.0
-offset_top = 57.0
-offset_right = 242.0
-offset_bottom = 104.0
-theme_override_font_sizes/font_size = 34
+offset_left = 35.0
+offset_top = 27.0
+offset_right = 146.0
+offset_bottom = 81.0
+theme_override_colors/font_color = Color(0.44566476, 0.87935436, 0.28358868, 1)
+theme_override_colors/font_outline_color = Color(0.07612803, 0.2495498, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 39
 text = "00000"
+script = ExtResource("2_0xm2m")
