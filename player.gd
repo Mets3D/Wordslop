@@ -10,11 +10,13 @@ extends Node
 var NUM_LETTERS = 12
 var hand_tiles: Array[LetterTile] = []
 var await_submit = false # Flag to prevent re-submitting during the submit animation (by spamming Enter key)
+var MAX_WORD_LENGTH = 15
 
 func _ready():
 	assert ((score_tracker and typed_word_ui and hand_ui and word_evaluator), "UI elements not specified for player.")
 	score_tracker.player = self
 	word_evaluator.player = self
+	word_evaluator.update()
 	typed_word_ui.child_order_changed.connect(refresh_letter_states)
 
 	new_hand_letters(NUM_LETTERS)
@@ -31,10 +33,15 @@ func new_hand_letters(num_letters: int) -> Array[LetterTile]:
 
 	var chosen_letters = get_random_letters__min_1_vowel(num_letters)
 	for i in range(num_letters):
-		var new_tile = LetterTile.add_new_to_ui(chosen_letters[i], self.hand_ui, self)
-		new_tile.player = self
-		hand_tiles.append(new_tile)
+		add_tile_to_hand(chosen_letters[i])
 	return hand_tiles
+
+func add_tile_to_hand(letter: String) -> LetterTile:
+	var letter_tile = LetterTile.new(letter)
+	hand_ui.add_child(letter_tile)
+	hand_tiles.append(letter_tile)
+	letter_tile.on_click = func(): type_letter(letter)
+	return letter_tile
 
 func clear_hand():
 	"""Remove all tiles from the player's hand."""
@@ -70,7 +77,15 @@ func handle_input(event):
 func type_letter(letter: String):
 	for hand_tile: LetterTile in hand_tiles:
 		if letter.to_lower() == hand_tile.text.to_lower():
-			hand_tile.click_tile()
+			if len(get_typed_letter_tiles()) >= MAX_WORD_LENGTH:
+				hand_tile.click_error()
+			else:
+				# Add a copy of this letter tile to the typed word.
+				hand_tile.click_success()
+				var new_tile = LetterTile.new(letter)
+				typed_word_ui.add_child(new_tile)
+				new_tile.click_success()
+				new_tile.on_click = new_tile.queue_free
 
 func get_valid_word_tiles() -> Array[LetterTile]:
 	"""Return only those tiles which make a valid word (so excludes excess tiles).

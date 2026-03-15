@@ -2,8 +2,6 @@
 class_name LetterTile
 extends Label
 
-const Globals = preload("res://main.gd")
-
 const ALPHABET: Array[String] = [
 	"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L",
 	"M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"
@@ -20,8 +18,7 @@ const VOWELS: Array[String] = ["A", "E", "I", "O", "U", "Y"]
 const SPACING := 12
 const DEFAULT_TILE_SIZE := Vector2(65, 100)
 var score: int = 1
-
-var player: Player
+var score_ui: Label
 
 enum VisualState {
 	NO_HOVER,
@@ -36,7 +33,6 @@ enum VisualState {
 	CLICK_ERROR,
 	CLICK_SUCCESS,
 }
-
 
 var _is_hovered: bool = false
 var is_hovered: bool:
@@ -60,6 +56,8 @@ var is_scoring: bool:
 			visual_state = VisualState.NO_HOVER
 	get:
 		return _is_scoring
+
+var on_click: Callable = func(): pass
 
 ### VISUAL PROPERTIES.
 var _visual_state: VisualState
@@ -95,13 +93,12 @@ var success_scale := hover_scale
 
 var correct_color := Color(0.534, 0.97, 0.752, 1.0)
 
-func _init(letter_str: String, owner_player: Player):
+func _init(letter_str: String):
 	text = letter_str.to_upper()
 	size = DEFAULT_TILE_SIZE
 	custom_minimum_size = DEFAULT_TILE_SIZE
 	pivot_offset = size / 2.0
-	score = LETTER_SCORES[letter_str]
-	player = owner_player
+	score = LETTER_SCORES[text]
 
 	horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
@@ -137,7 +134,7 @@ func _ready() -> void:
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-			click_tile()
+			on_click.call()
 			accept_event()
 
 func _hover_start():
@@ -146,27 +143,11 @@ func _hover_start():
 func _hover_end():
 	is_hovered = false
 
-func click_tile() -> void:
-	"""Do whatever should happen when the tile is activated.
-	If this tile is in the player's hand, it should be added to the typed letters.
-	If this tile is in the typed letters, it should be removed from there.
-	TODO: Would be cleaner if Player determines what should happen here... Ideally LetterTile should not need a reference to Player, and as of typing this comment, this is the only function where that's needed.
-	"""
-	var parent = self.get_parent_control()
-	if parent == player.typed_word_ui:
-		# Remove this typed letter from the typed word.
-		player.typed_word_ui.remove_child(self)
-		queue_free()
-		return
+func click_success():
+	visual_state = VisualState.CLICK_SUCCESS
 
-	if parent == player.hand_ui:
-		if len(player.typed_word_ui.get_children()) >= Globals.MAX_WORD_LENGTH:
-			visual_state = VisualState.CLICK_ERROR
-		else:
-			# Add a copy of this letter tile to the typed word.
-			var new_tile = add_new_to_ui(self.text, player.typed_word_ui, player)
-			new_tile.visual_state = VisualState.CLICK_SUCCESS
-			visual_state = VisualState.CLICK_SUCCESS
+func click_error():
+	visual_state = VisualState.CLICK_ERROR
 
 func submit(success: bool) -> Tween:
 	if success:
@@ -224,10 +205,3 @@ func _tween_active_stop() -> void:
 	if active_tween:
 		active_tween.kill()
 		active_tween = null
-
-static func add_new_to_ui(letter_str: String, parent_node: Control, owner_player: Player) -> LetterTile:
-	"""Add a new LetterTile instance to the passed UI element, eg. the player's hand or the typed word.
-	Return the new LetterTile."""
-	var letter_tile = LetterTile.new(letter_str, owner_player)
-	parent_node.add_child(letter_tile)
-	return letter_tile

@@ -81,7 +81,7 @@ word_total_ui = NodePath("ScorePreviewTotal")
 [node name="ScoreSumTiles" type="Label" parent="UI/Player/ScorePreview_CenterContainer/WordEvaluator" unique_id=529625227]
 layout_mode = 2
 theme_override_font_sizes/font_size = 50
-text = "130"
+text = "13"
 
 [node name="ScoreMultiplySymbol" type="Label" parent="UI/Player/ScorePreview_CenterContainer/WordEvaluator" unique_id=1508531432]
 layout_mode = 2
@@ -91,7 +91,7 @@ text = "  x  "
 [node name="ScoreMultiplier" type="Label" parent="UI/Player/ScorePreview_CenterContainer/WordEvaluator" unique_id=1231533912]
 layout_mode = 2
 theme_override_font_sizes/font_size = 50
-text = "13"
+text = "2"
 
 [node name="ScoreEqualSymbol" type="Label" parent="UI/Player/ScorePreview_CenterContainer/WordEvaluator" unique_id=1516832722]
 layout_mode = 2
@@ -101,4 +101,4 @@ text = "  =  "
 [node name="ScorePreviewTotal" type="Label" parent="UI/Player/ScorePreview_CenterContainer/WordEvaluator" unique_id=1320571196]
 layout_mode = 2
 theme_override_font_sizes/font_size = 50
-text = "46"
+text = "26"
