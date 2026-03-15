@@ -49,6 +49,12 @@ func clear_hand():
 		letter_tile.queue_free()
 	hand_tiles.clear()
 
+func shuffle_hand():
+	var children = hand_ui.get_children()
+	children.shuffle()  # Array has a built-in shuffle() method
+	for child in children:
+		hand_ui.move_child(child, -1)  # -1 moves to the end
+
 func get_random_letters__min_1_vowel(num_letters: int) -> Array[String]:
 	"""Return some random unique letters with at least 1 vowel.
 	NOTE: Additional rules could be added, like not providing a Q without a U.
@@ -70,6 +76,10 @@ func handle_input(event: InputEvent):
 	if event.is_action_pressed("ui_text_backspace", true) or event.as_text() == "Ctrl+X":
 		backspace(event.ctrl_pressed)
 		return
+
+	if event.is_pressed() and event.as_text() == "Ctrl+R":
+		shuffle_hand()
+
 	if event.is_pressed() and event.as_text() in LetterTile.ALPHABET:
 		type_letter(event.as_text())
 
