@@ -55,35 +55,52 @@ func handle_input(event):
 		backspace()
 		return
 
-	type_letter(event)
+	if event.as_text() in LetterTile.ALPHABET:
+		type_letter(event)
 
 func type_letter(event):
 	for hand_tile: LetterTile in hand_tiles:
 		if event.is_pressed() and (event.as_text() == hand_tile.text):
 			hand_tile.click_tile()
-	var is_valid_word = is_typed_word_valid()
-	for letter_tile: LetterTile in self.typed_word_ui.get_children():
-		if is_valid_word:
-			# TODO: This breaks for the last typed letter, since it tweens to its default color...
-			letter_tile.modulate = Color(0.534, 0.97, 0.752, 1.0)
+	refresh_letter_states()
+
+func refresh_letter_states():
+	var word = get_typed_word()
+	# Find longest valid word by removing letters from the end until finding one.
+	while len(word) > 0:
+		if word in WORD_LIST:
+			break
+		# Remove last letter
+		word = word.left(-1)
+	var typed_letter_tiles = typed_word_ui.get_children()
+	for i in range(len(typed_letter_tiles)):
+		var state
+		if i < len(word):
+			typed_letter_tiles[i].makes_a_word = true
+			state = LetterTile.VisualState.WORD_PREVIEW_CORRECT
 		else:
-			letter_tile.modulate = Color(1.0, 1.0, 1.0, 1.0)
+			typed_letter_tiles[i].makes_a_word = false
+			state = LetterTile.VisualState.NO_HOVER
+		typed_letter_tiles[i].set_visual_state(state)
 
 func backspace():
-	if len(self.typed_word_ui.get_children()) > 0:
-		self.typed_word_ui.get_child(-1).queue_free()
+	if len(typed_word_ui.get_children()) > 0:
+		var last = typed_word_ui.get_child(-1)
+		typed_word_ui.remove_child(last)
+		last.queue_free()
+		refresh_letter_states()
 
 func submit_typed_word():
 	if is_typed_word_valid():
 		var word_score = 0
-		new_hand_letters(NUM_LETTERS)
-		for letter_tile in self.typed_word_ui.get_children():
+		for letter_tile in typed_word_ui.get_children():
 			word_score += letter_tile.score
 			letter_tile._tween_submit_success()
-		self.score += word_score
-		self.score_ui.text = str(self.score).pad_zeros(5)
+		score += word_score
+		score_ui.text = str(score).pad_zeros(5)
+		new_hand_letters(NUM_LETTERS)
 	else:
-		for letter_tile in self.typed_word_ui.get_children():
+		for letter_tile in typed_word_ui.get_children():
 			letter_tile._tween_error()
 
 func is_typed_word_valid() -> bool:

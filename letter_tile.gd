@@ -29,8 +29,9 @@ enum VisualState {
 	HOVER,
 
 	# States that LetterTiles in the typed word can be in
-	WORD_INCORRECT,
-	WORD_CORRECT,
+	WORD_SUBMIT_INCORRECT,
+	WORD_SUBMIT_CORRECT,
+	WORD_PREVIEW_CORRECT,
 
 	# States that LetterTiles in the player's hand can be in
 	CLICK_ERROR,
@@ -59,6 +60,9 @@ var error_click_scale := Vector2(1.1, 1.1)
 
 var success_color := Color(0.26, 0.72, 0.0, 1.0)
 var success_scale := hover_scale
+
+var correct_color := Color(0.534, 0.97, 0.752, 1.0)
+var makes_a_word: bool
 
 func _init(letter_str: String, owner_player: Player):
 	text = letter_str.to_upper()
@@ -109,7 +113,10 @@ func click_tile() -> void:
 	var parent = self.get_parent_control()
 	if parent == player.typed_word_ui:
 		# Remove this typed letter from the typed word.
+		player.typed_word_ui.remove_child(self)
 		queue_free()
+		print("REMOVE LETTER!")
+		player.refresh_letter_states()
 		return
 
 	if parent == player.hand_ui:
@@ -129,6 +136,7 @@ func _tween_error() -> void:
 
 func _tween_hover_start() -> void:
 	is_hovered = true
+	rest_position = position
 	set_visual_state(VisualState.HOVER)
 
 func _tween_hover_end() -> void:
@@ -136,7 +144,7 @@ func _tween_hover_end() -> void:
 	set_visual_state(VisualState.NO_HOVER)
 
 func _tween_submit_success() -> void:
-	set_visual_state(VisualState.WORD_CORRECT)
+	set_visual_state(VisualState.WORD_SUBMIT_CORRECT)
 
 func set_visual_state(new_state: VisualState) -> void:
 	current_visual_state = new_state
@@ -147,30 +155,36 @@ func _start_state_animation() -> void:
 	active_tween = create_tween()
 	active_tween.set_parallel(true)
 	
-	var goal_color = hover_color if is_hovered else default_color
+	var goal_color = correct_color if makes_a_word else default_color
+	goal_color = hover_color if is_hovered else goal_color
 	var goal_scale = hover_scale if is_hovered else default_scale
 	
 	match current_visual_state:
 		VisualState.NO_HOVER:
-			active_tween.tween_property(self, "modulate", default_color, hover_tween_time)
-			active_tween.tween_property(self, "scale", default_scale, hover_tween_time)
+			active_tween.tween_property(self, "modulate", goal_color, hover_tween_time)
+			active_tween.tween_property(self, "scale", goal_scale, hover_tween_time)
+			active_tween.tween_property(self, "position:y", rest_position.y, hover_tween_time)
 
 		VisualState.HOVER:
 			active_tween.tween_property(self, "modulate", hover_color, hover_tween_time)
 			active_tween.tween_property(self, "scale", hover_scale, hover_tween_time)
-			# TODO: Lift Y position...
+			active_tween.tween_property(self, "position:y", rest_position.y - 8, hover_tween_time)
 
-		VisualState.WORD_INCORRECT, VisualState.CLICK_ERROR:
+		VisualState.WORD_SUBMIT_INCORRECT, VisualState.CLICK_ERROR:
 			active_tween.tween_property(self, "modulate", goal_color, click_tween_time)
 			active_tween.tween_property(self, "scale", goal_scale, click_tween_time)
 			self.modulate = error_click_color
 			self.scale = error_click_scale
 #
-		VisualState.WORD_CORRECT:
-			active_tween.tween_property(self, "modulate", goal_color, click_tween_time)
-			active_tween.tween_property(self, "scale", goal_scale, click_tween_time)
-			self.modulate = success_color
-			self.scale = success_scale
+		VisualState.WORD_SUBMIT_CORRECT:
+			active_tween.tween_property(self, "modulate", success_color, click_tween_time)
+			active_tween.tween_property(self, "scale", success_scale, click_tween_time)
+			await active_tween.finished
+			active_tween.kill()
+			queue_free()
+
+		VisualState.WORD_PREVIEW_CORRECT:
+			active_tween.tween_property(self, "modulate", correct_color, click_tween_time)
 
 		VisualState.CLICK_SUCCESS:
 			active_tween.tween_property(self, "modulate", goal_color, click_tween_time)
