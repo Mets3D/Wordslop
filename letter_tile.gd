@@ -22,8 +22,6 @@ var score: int = 1
 
 var player: Player
 
-### ANIMATION - These should probably be moved to an inherited class (or interface)
-
 enum VisualState {
 	NO_HOVER,
 	HOVER,
@@ -38,15 +36,6 @@ enum VisualState {
 	CLICK_SUCCESS,
 }
 
-var active_tween: Tween
-var _current_visual_state: VisualState
-var current_visual_state: VisualState:
-	set(value):
-		_current_visual_state = value
-		_tween_active_stop()
-		_start_state_animation()
-	get:
-		return _current_visual_state
 
 var _is_hovered: bool = false
 var is_hovered: bool:
@@ -54,11 +43,34 @@ var is_hovered: bool:
 		_is_hovered = value
 		if _is_hovered:
 			rest_position = position
-			current_visual_state = VisualState.HOVER
+			visual_state = VisualState.HOVER
 		else:
-			current_visual_state = VisualState.NO_HOVER
+			visual_state = VisualState.NO_HOVER
 	get:
 		return _is_hovered
+
+var _is_scoring: bool
+var is_scoring: bool:
+	set(value):
+		_is_scoring = value
+		if value:
+			visual_state = VisualState.WORD_PREVIEW_CORRECT
+		else:
+			visual_state = VisualState.NO_HOVER
+	get:
+		return _is_scoring
+
+### VISUAL PROPERTIES.
+var _visual_state: VisualState
+var visual_state: VisualState:
+	set(value):
+		_visual_state = value
+		_tween_active_stop()
+		__start_state_animation()
+	get:
+		return _visual_state
+
+var active_tween: Tween
 
 var rest_position: Vector2
 
@@ -81,7 +93,6 @@ var success_color := Color(0.26, 0.72, 0.0, 1.0)
 var success_scale := hover_scale
 
 var correct_color := Color(0.534, 0.97, 0.752, 1.0)
-var makes_a_word: bool
 
 func _init(letter_str: String, owner_player: Player):
 	text = letter_str.to_upper()
@@ -128,7 +139,17 @@ func _gui_input(event: InputEvent) -> void:
 			click_tile()
 			accept_event()
 
+func _hover_start():
+	is_hovered = true
+
+func _hover_end():
+	is_hovered = false
+
 func click_tile() -> void:
+	"""Do whatever should happen when the tile is activated.
+	If this tile is in the player's hand, it should be added to the typed letters.
+	If this tile is in the typed letters, it should be removed from there.
+	"""
 	var parent = self.get_parent_control()
 	if parent == player.typed_word_ui:
 		# Remove this typed letter from the typed word.
@@ -139,45 +160,29 @@ func click_tile() -> void:
 
 	if parent == player.hand_ui:
 		if len(player.typed_word_ui.get_children()) >= Globals.MAX_WORD_LENGTH:
-			current_visual_state = VisualState.CLICK_ERROR
+			visual_state = VisualState.CLICK_ERROR
 		else:
 			# Add a copy of this letter tile to the typed word.
 			var new_tile = add_new_to_ui(self.text, player.typed_word_ui, player)
-			new_tile.current_visual_state = VisualState.CLICK_SUCCESS
-			current_visual_state = VisualState.CLICK_SUCCESS
-
-func _hover_start():
-	is_hovered = true
-
-func _hover_end():
-	is_hovered = false
+			new_tile.visual_state = VisualState.CLICK_SUCCESS
+			visual_state = VisualState.CLICK_SUCCESS
 
 func submit(success: bool) -> Tween:
 	if success:
-		current_visual_state = VisualState.WORD_SUBMIT_CORRECT
+		visual_state = VisualState.WORD_SUBMIT_CORRECT
 	else:
-		current_visual_state = VisualState.CLICK_ERROR
+		visual_state = VisualState.CLICK_ERROR
 	return active_tween
 
-func _tween_error() -> void:
-	current_visual_state = VisualState.CLICK_ERROR
-
-func set_word_contribute_state(contributes: bool):
-	makes_a_word = contributes
-	if contributes:
-		current_visual_state = VisualState.WORD_PREVIEW_CORRECT
-	else:
-		current_visual_state = VisualState.NO_HOVER
-
-func _start_state_animation() -> void:
+func __start_state_animation() -> void:
 	active_tween = create_tween()
 	active_tween.set_parallel(true)
 	
-	var goal_color = correct_color if makes_a_word else default_color
+	var goal_color = correct_color if is_scoring else default_color
 	goal_color = hover_color if is_hovered else goal_color
 	var goal_scale = hover_scale if is_hovered else default_scale
 	
-	match current_visual_state:
+	match visual_state:
 		VisualState.NO_HOVER:
 			active_tween.tween_property(self, "modulate", goal_color, hover_tween_time)
 			active_tween.tween_property(self, "scale", goal_scale, hover_tween_time)
@@ -211,7 +216,7 @@ func _start_state_animation() -> void:
 			self.scale = click_scale
 
 	await active_tween.finished
-	current_visual_state = VisualState.HOVER if is_hovered else VisualState.NO_HOVER
+	visual_state = VisualState.HOVER if is_hovered else VisualState.NO_HOVER
 	_tween_active_stop()
 
 func _tween_active_stop() -> void:
@@ -220,6 +225,8 @@ func _tween_active_stop() -> void:
 		active_tween = null
 
 static func add_new_to_ui(letter_str: String, parent_node: Control, owner_player: Player) -> LetterTile:
+	"""Add a new LetterTile instance to the passed UI element, eg. the player's hand or the typed word.
+	Return the new LetterTile."""
 	var letter_tile = LetterTile.new(letter_str, owner_player)
 	parent_node.add_child(letter_tile)
 	return letter_tile

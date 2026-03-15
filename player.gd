@@ -68,7 +68,7 @@ func get_valid_word_tiles() -> Array[LetterTile]:
 	"""
 	var tiles: Array[LetterTile] = []
 	for tile: LetterTile in get_typed_letter_tiles():
-		if tile.makes_a_word:
+		if tile.is_scoring:
 			tiles.append(tile)
 	return tiles
 
@@ -82,7 +82,7 @@ func refresh_letter_states():
 		word = word.left(-1)
 	var typed_letter_tiles: Array[LetterTile] = get_typed_letter_tiles()
 	for i in range(len(typed_letter_tiles)):
-		typed_letter_tiles[i].set_word_contribute_state(i<len(word))
+		typed_letter_tiles[i].is_scoring = i<len(word)
 
 func backspace():
 	"""Remove the right-most typed letter."""
@@ -99,13 +99,15 @@ func attempt_word_submit():
 		# and then destroy them.
 		var submit_tween: Tween
 		for letter_tile in get_typed_letter_tiles():
-			submit_tween = letter_tile.submit(letter_tile.makes_a_word)
+			submit_tween = letter_tile.submit(letter_tile.is_scoring)
 
 		# Add the typed word's score to the player score.
 		score_tracker.score_letter_tiles(get_valid_word_tiles())
 
 		# Get a fresh hand of letters to play with.
 		new_hand_letters(NUM_LETTERS)
+
+		# Don't allow re-submitting until submit animation is finished.
 		await_submit = true
 		await submit_tween.finished
 		await_submit = false
