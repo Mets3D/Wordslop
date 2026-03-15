@@ -64,7 +64,7 @@ func get_random_letters__min_1_vowel(num_letters: int) -> Array[String]:
 
 func handle_input(event: InputEvent):
 	if event.is_action_pressed("ui_accept") and not await_submit:  # Space/Enter
-		attempt_word_submit()
+		attempt_word_submit(event.ctrl_pressed)
 		return
 
 	if event.is_action_pressed("ui_text_backspace", true) or event.as_text() == "Ctrl+X":
@@ -119,29 +119,38 @@ func backspace(all=false):
 			tile.queue_free()
 	word_evaluator.update()
 
-func attempt_word_submit():
+func attempt_word_submit(trim_tail=false):
 	"""Try to submit the currently typed word, which may succeed or fail."""
-	if is_typed_word_valid():
+	var can_submit = is_typed_word_valid()
+	if trim_tail:
+		can_submit = LetterTile.tiles_to_str(get_valid_word_tiles())
+	
+	var submit_tile = func(tile: LetterTile):
+		if tile.is_scoring:
+			tile.submit_success()
+		else:
+			tile.click_error()
+		await tile.active_tween.finished
+		tile.queue_free()
+		await_submit = false
+	
+	if can_submit:
+		# Don't allow re-submitting until submit animation is finished.
+		await_submit = true
+
 		# Flash the typed letters which contribute to the valid word green, 
 		# and then destroy them.
-		var submit_tween: Tween
 		for letter_tile in get_typed_letter_tiles():
-			submit_tween = letter_tile.submit(letter_tile.is_scoring)
-
+			submit_tile.call(letter_tile)
 		# Add the typed word's score to the player score.
 		score_tracker.add_score(word_evaluator.word_total)
 
 		# Get a fresh hand of letters to play with.
 		new_hand_letters(NUM_LETTERS)
-
-		# Don't allow re-submitting until submit animation is finished.
-		await_submit = true
-		await submit_tween.finished
-		await_submit = false
 	else:
 		for letter_tile: LetterTile in get_typed_letter_tiles():
 			# Flash the typed word in red to indicate failure to submit.
-			letter_tile.submit(false)
+			letter_tile.click_error()
 
 func is_typed_word_valid() -> bool:
 	return WordListHelper.is_valid_word(get_typed_word_str())
@@ -157,7 +166,4 @@ func get_typed_word_str(parent: Control = null) -> String:
 	"""Lowercase, to match our word database."""
 	if parent == null:
 		parent = typed_word_ui
-	var word = ""
-	for letter_tile: Label in get_typed_letter_tiles(parent):
-		word += letter_tile.text
-	return word.to_lower()
+	return LetterTile.tiles_to_str(get_typed_letter_tiles(parent))

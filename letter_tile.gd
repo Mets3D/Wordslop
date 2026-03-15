@@ -161,12 +161,8 @@ func click_success():
 func click_error():
 	visual_state = VisualState.CLICK_ERROR
 
-func submit(success: bool) -> Tween:
-	if success:
-		visual_state = VisualState.WORD_SUBMIT_CORRECT
-	else:
-		visual_state = VisualState.CLICK_ERROR
-	return active_tween
+func submit_success():
+	visual_state = VisualState.WORD_SUBMIT_CORRECT
 
 func __start_state_animation() -> void:
 	active_tween = create_tween()
@@ -175,6 +171,11 @@ func __start_state_animation() -> void:
 	var goal_color = correct_color if is_scoring else default_color
 	goal_color = hover_color if is_hovered else goal_color
 	var goal_scale = hover_scale if is_hovered else default_scale
+
+	var kill_after_tween = func(tween):
+		await tween.finished
+		tween.kill()
+		queue_free()
 
 	match visual_state:
 		VisualState.NO_HOVER:
@@ -192,13 +193,13 @@ func __start_state_animation() -> void:
 			active_tween.tween_property(self, "scale", goal_scale, click_tween_time)
 			self.modulate = error_click_color
 			self.scale = error_click_scale
+			if visual_state == VisualState.WORD_SUBMIT_INCORRECT:
+				kill_after_tween.call(active_tween)
 
 		VisualState.WORD_SUBMIT_CORRECT:
 			active_tween.tween_property(self, "modulate", success_color, click_tween_time)
 			active_tween.tween_property(self, "scale", success_scale, click_tween_time)
-			await active_tween.finished
-			active_tween.kill()
-			queue_free()
+			kill_after_tween.call(active_tween)
 
 		VisualState.WORD_PREVIEW_CORRECT:
 			active_tween.tween_property(self, "modulate", correct_color, click_tween_time)
@@ -217,3 +218,9 @@ func _tween_active_stop() -> void:
 	if active_tween:
 		active_tween.kill()
 		active_tween = null
+
+static func tiles_to_str(tiles: Array[LetterTile]) -> String:
+	var word = ""
+	for letter_tile: LetterTile in tiles:
+		word += letter_tile.text
+	return word.to_lower()
