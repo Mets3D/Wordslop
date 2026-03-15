@@ -3,17 +3,19 @@
 [ext_resource type="Script" uid="uid://lgqfijb2ro1" path="res://main.gd" id="1_ig7tw"]
 [ext_resource type="Script" uid="uid://daumkrvy78o0w" path="res://player_score_tracker.gd" id="2_0xm2m"]
 [ext_resource type="Script" uid="uid://dt08ph6rcluk3" path="res://player.gd" id="3_h2yge"]
+[ext_resource type="Script" uid="uid://b1u4xva1x7eue" path="res://word_evaluator.gd" id="4_1bvp3"]
 
 [node name="Main" type="Node2D" unique_id=1017280142]
 script = ExtResource("1_ig7tw")
 
 [node name="UI" type="CanvasLayer" parent="." unique_id=1210193483]
 
-[node name="Player" type="Node" parent="UI" unique_id=1843991346 node_paths=PackedStringArray("score_tracker", "typed_word_ui", "hand_ui")]
+[node name="Player" type="Node" parent="UI" unique_id=1843991346 node_paths=PackedStringArray("score_tracker", "typed_word_ui", "hand_ui", "word_evaluator")]
 script = ExtResource("3_h2yge")
 score_tracker = NodePath("Score")
 typed_word_ui = NodePath("TypedLetters_HBox")
 hand_ui = NodePath("HandLetters_HBox")
+word_evaluator = NodePath("ScorePreview_CenterContainer/WordEvaluator")
 metadata/_custom_type_script = "uid://dt08ph6rcluk3"
 
 [node name="HandLetters_HBox" type="HBoxContainer" parent="UI/Player" unique_id=486478828]
@@ -35,8 +37,10 @@ alignment = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_top = 350.0
-offset_bottom = 373.0
+offset_left = -170.5
+offset_top = 385.0
+offset_right = 170.5
+offset_bottom = 485.0
 grow_horizontal = 2
 alignment = 1
 
@@ -52,3 +56,49 @@ theme_override_constants/outline_size = 10
 theme_override_font_sizes/font_size = 79
 text = "00000"
 script = ExtResource("2_0xm2m")
+
+[node name="ScorePreview_CenterContainer" type="CenterContainer" parent="UI/Player" unique_id=853239756]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -169.5
+offset_top = -420.0
+offset_right = 169.5
+offset_bottom = -351.0
+grow_horizontal = 2
+grow_vertical = 0
+pivot_offset_ratio = Vector2(0.5, 0.5)
+
+[node name="WordEvaluator" type="HBoxContainer" parent="UI/Player/ScorePreview_CenterContainer" unique_id=1399266375 node_paths=PackedStringArray("sum_tiles_ui", "multiplier_ui", "word_total_ui")]
+layout_mode = 2
+script = ExtResource("4_1bvp3")
+sum_tiles_ui = NodePath("ScoreSumTiles")
+multiplier_ui = NodePath("ScoreMultiplier")
+word_total_ui = NodePath("ScorePreviewTotal")
+
+[node name="ScoreSumTiles" type="Label" parent="UI/Player/ScorePreview_CenterContainer/WordEvaluator" unique_id=529625227]
+layout_mode = 2
+theme_override_font_sizes/font_size = 50
+text = "130"
+
+[node name="ScoreMultiplySymbol" type="Label" parent="UI/Player/ScorePreview_CenterContainer/WordEvaluator" unique_id=1508531432]
+layout_mode = 2
+theme_override_font_sizes/font_size = 38
+text = "  x  "
+
+[node name="ScoreMultiplier" type="Label" parent="UI/Player/ScorePreview_CenterContainer/WordEvaluator" unique_id=1231533912]
+layout_mode = 2
+theme_override_font_sizes/font_size = 50
+text = "13"
+
+[node name="ScoreEqualSymbol" type="Label" parent="UI/Player/ScorePreview_CenterContainer/WordEvaluator" unique_id=1516832722]
+layout_mode = 2
+theme_override_font_sizes/font_size = 38
+text = "  =  "
+
+[node name="ScorePreviewTotal" type="Label" parent="UI/Player/ScorePreview_CenterContainer/WordEvaluator" unique_id=1320571196]
+layout_mode = 2
+theme_override_font_sizes/font_size = 50
+text = "46"

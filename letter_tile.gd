@@ -150,13 +150,13 @@ func click_tile() -> void:
 	"""Do whatever should happen when the tile is activated.
 	If this tile is in the player's hand, it should be added to the typed letters.
 	If this tile is in the typed letters, it should be removed from there.
+	TODO: Would be cleaner if Player determines what should happen here... Ideally LetterTile should not need a reference to Player, and as of typing this comment, this is the only function where that's needed.
 	"""
 	var parent = self.get_parent_control()
 	if parent == player.typed_word_ui:
 		# Remove this typed letter from the typed word.
 		player.typed_word_ui.remove_child(self)
 		queue_free()
-		player.refresh_letter_states()
 		return
 
 	if parent == player.hand_ui:
@@ -182,8 +182,6 @@ func __start_state_animation() -> void:
 	var goal_color = correct_color if is_scoring else default_color
 	goal_color = hover_color if is_hovered else goal_color
 	var goal_scale = hover_scale if is_hovered else default_scale
-
-	print(self.text, VisualState.get(visual_state))
 
 	match visual_state:
 		VisualState.NO_HOVER:

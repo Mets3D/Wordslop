@@ -1,4 +1,10 @@
+@tool
 class_name WordListHelper
+
+const WORD_LIST = preload("res://resources/word_list_parsed.gd").WORD_LIST
+
+# Pre-processed at startup — keys are sorted letter strings, values are word arrays
+static var _words_by_letters: Dictionary = {}
 
 static func load_word_list(path) -> Array[String]:
 	var word_list: Array[String] = []
@@ -41,3 +47,37 @@ static func write_word_list():
 			file.store_line(line)
 	file.store_line("]")
 	file.close()
+
+static func is_valid_word(word: String) -> bool:
+	return word in WORD_LIST
+
+static func _build_word_index() -> void:
+	for word in WORD_LIST:
+		var key = _letter_key(word)
+		if not _words_by_letters.has(key):
+			_words_by_letters[key] = []
+		_words_by_letters[key].append(word)
+
+static func find_valid_word_with_letters(letters: String, min_length=5) -> String:
+	for key in _words_by_letters.keys():
+		if _is_subset(key, letters):
+			for word in _words_by_letters[key]:
+				if word.length() >= min_length:
+					return word
+	return ""  # no match found
+
+static func _letter_key(word: String) -> String:
+	# Collapse a word to its unique sorted letters, e.g. "apple" -> "aelp"
+	var letters = Array(word.split(""))
+	letters = letters.reduce(func(acc, l): 
+		if l not in acc: acc.append(l)
+		return acc
+	, [])
+	letters.sort()
+	return "".join(letters)
+
+static func _is_subset(required_letters: String, available_letters: String) -> bool:
+	for ch in required_letters:
+		if ch not in available_letters:
+			return false
+	return true
