@@ -1,19 +1,19 @@
 class_name Player
 extends Node
 
-var score_tracker: PlayerScoreTracker
-var typed_word_ui: HBoxContainer
-var hand_ui: HBoxContainer
+@export var score_tracker: PlayerScoreTracker
+@export var typed_word_ui: HBoxContainer
+@export var hand_ui: HBoxContainer
 
 var NUM_LETTERS = 12
 var hand_tiles: Array[LetterTile] = []
 const WORD_LIST = preload("res://resources/word_list_parsed.gd").WORD_LIST
 var await_submit = false # Flag to prevent re-submitting during the submit animation (by spamming Enter key)
 
-func _init(ui_hand: HBoxContainer, ui_typed_word: HBoxContainer, ui_score: Label):
-	hand_ui = ui_hand
-	typed_word_ui = ui_typed_word
-	score_tracker = PlayerScoreTracker.new(self, ui_score)
+func _ready():
+	assert ((score_tracker and typed_word_ui and hand_ui), "UI elements not specified for player.")
+	score_tracker.player = self
+	new_hand_letters(NUM_LETTERS)
 
 func new_hand_letters(num_letters: int) -> Array[LetterTile]:
 	clear_hand()
@@ -57,10 +57,13 @@ func handle_input(event):
 		type_letter(event)
 
 func type_letter(event):
+	var orig_word_length: int = len(get_typed_letter_tiles())
 	for hand_tile: LetterTile in hand_tiles:
 		if event.is_pressed() and (event.as_text() == hand_tile.text):
 			hand_tile.click_tile()
-	refresh_letter_states()
+
+	if orig_word_length != len(get_typed_letter_tiles()):
+		refresh_letter_states()
 
 func get_valid_word_tiles() -> Array[LetterTile]:
 	"""Return only those tiles which make a valid word (so excludes excess tiles).

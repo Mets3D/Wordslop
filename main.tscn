@@ -2,13 +2,14 @@
 
 [ext_resource type="Script" uid="uid://lgqfijb2ro1" path="res://main.gd" id="1_ig7tw"]
 [ext_resource type="Script" uid="uid://daumkrvy78o0w" path="res://player_score_tracker.gd" id="2_0xm2m"]
+[ext_resource type="Script" uid="uid://dt08ph6rcluk3" path="res://player.gd" id="3_h2yge"]
 
 [node name="Main" type="Node2D" unique_id=1017280142]
 script = ExtResource("1_ig7tw")
 
 [node name="UI" type="CanvasLayer" parent="." unique_id=1210193483]
 
-[node name="Letters_HBox" type="HBoxContainer" parent="UI" unique_id=486478828]
+[node name="HandLetters_HBox" type="HBoxContainer" parent="UI" unique_id=486478828]
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
@@ -23,7 +24,7 @@ grow_vertical = 0
 theme_override_constants/separation = 20
 alignment = 1
 
-[node name="TypedWord_HBox" type="HBoxContainer" parent="UI" unique_id=913903040]
+[node name="TypedLetters_HBox" type="HBoxContainer" parent="UI" unique_id=913903040]
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
@@ -33,13 +34,21 @@ grow_horizontal = 2
 alignment = 1
 
 [node name="Score" type="Label" parent="UI" unique_id=1774975665]
-offset_left = 35.0
-offset_top = 27.0
-offset_right = 146.0
-offset_bottom = 81.0
+offset_left = 19.0
+offset_top = 13.0
+offset_right = 264.0
+offset_bottom = 123.0
+pivot_offset_ratio = Vector2(0.5, 0.245)
 theme_override_colors/font_color = Color(0.44566476, 0.87935436, 0.28358868, 1)
 theme_override_colors/font_outline_color = Color(0.07612803, 0.2495498, 0, 1)
-theme_override_constants/outline_size = 4
-theme_override_font_sizes/font_size = 39
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 79
 text = "00000"
 script = ExtResource("2_0xm2m")
+
+[node name="Player" type="Node" parent="UI" unique_id=1843991346 node_paths=PackedStringArray("score_tracker", "typed_word_ui", "hand_ui")]
+script = ExtResource("3_h2yge")
+score_tracker = NodePath("../Score")
+typed_word_ui = NodePath("../TypedLetters_HBox")
+hand_ui = NodePath("../HandLetters_HBox")
+metadata/_custom_type_script = "uid://dt08ph6rcluk3"

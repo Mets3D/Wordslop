@@ -181,7 +181,9 @@ func __start_state_animation() -> void:
 	var goal_color = correct_color if is_scoring else default_color
 	goal_color = hover_color if is_hovered else goal_color
 	var goal_scale = hover_scale if is_hovered else default_scale
-	
+
+	print(self.text, VisualState.get(visual_state))
+
 	match visual_state:
 		VisualState.NO_HOVER:
 			active_tween.tween_property(self, "modulate", goal_color, hover_tween_time)

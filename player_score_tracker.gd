@@ -23,10 +23,6 @@ const WORD_LENGTH_MULTIPLIERS: Dictionary[int, int] = {
 	15: 50,
 }
 
-func _init(owning_player: Player, ui_score: Label):
-	score_ui = ui_score
-	player = owning_player
-
 static func calc_score_for_tiles(letter_tiles: Array[LetterTile]) -> int:
 	"""Return the total score value of the given set of tiles."""
 	var word_score = 0
@@ -41,6 +37,13 @@ func score_letter_tiles(letter_tiles: Array[LetterTile]) -> int:
 	"""
 	var added_score = calc_score_for_tiles(letter_tiles)
 	score += added_score
-	score_ui.text = str(score).pad_zeros(5)
-	
+	text = str(score).pad_zeros(5)
+	_tween_score_flash()
 	return added_score
+
+func _tween_score_flash():
+	"""Visual feedback to be used when score counter increases."""
+	var tween = create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(self, "scale:y", 1.0, 0.2)
+	scale.y = 2
