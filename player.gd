@@ -49,24 +49,32 @@ func get_random_letters__min_1_vowel(num_letters: int) -> Array[String]:
 func handle_input(event):
 	if event.is_action_pressed("ui_accept"):  # Space/Enter
 		submit_typed_word()
+		return
 
 	if event.is_action_pressed("ui_text_backspace", true):
 		backspace()
+		return
 
 	type_letter(event)
 
 func type_letter(event):
-	for letter_tile in hand_tiles:
-		if event.is_pressed() and (event.as_text() == letter_tile.text):
-			letter_tile.click_tile()
+	for hand_tile: LetterTile in hand_tiles:
+		if event.is_pressed() and (event.as_text() == hand_tile.text):
+			hand_tile.click_tile()
+	var is_valid_word = is_typed_word_valid()
+	for letter_tile: LetterTile in self.typed_word_ui.get_children():
+		if is_valid_word:
+			# TODO: This breaks for the last typed letter, since it tweens to its default color...
+			letter_tile.modulate = Color(0.534, 0.97, 0.752, 1.0)
+		else:
+			letter_tile.modulate = Color(1.0, 1.0, 1.0, 1.0)
 
 func backspace():
 	if len(self.typed_word_ui.get_children()) > 0:
 		self.typed_word_ui.get_child(-1).queue_free()
 
 func submit_typed_word():
-	var typed_word = get_typed_word()
-	if typed_word in WORD_LIST:
+	if is_typed_word_valid():
 		var word_score = 0
 		new_hand_letters(NUM_LETTERS)
 		for letter_tile in self.typed_word_ui.get_children():
@@ -77,6 +85,10 @@ func submit_typed_word():
 	else:
 		for letter_tile in self.typed_word_ui.get_children():
 			letter_tile._tween_error()
+
+func is_typed_word_valid() -> bool:
+	var typed_word = get_typed_word()
+	return typed_word in WORD_LIST
 
 func get_typed_word() -> String:
 	var word = ""
