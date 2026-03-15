@@ -62,15 +62,14 @@ func get_random_letters__min_1_vowel(num_letters: int) -> Array[String]:
 			chosen_letters.append(shuffled_alphabet[i])
 	return chosen_letters
 
-func handle_input(event):
+func handle_input(event: InputEvent):
 	if event.is_action_pressed("ui_accept") and not await_submit:  # Space/Enter
 		attempt_word_submit()
 		return
 
-	if event.is_action_pressed("ui_text_backspace", true):
+	if event.is_action_pressed("ui_text_backspace", true) or event.as_text() == "Ctrl+X":
 		backspace(event.ctrl_pressed)
 		return
-
 	if event.is_pressed() and event.as_text() in LetterTile.ALPHABET:
 		type_letter(event.as_text())
 
