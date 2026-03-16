@@ -92,3 +92,17 @@ static func _is_subset(required_letters: String, available_letters: String) -> b
 		if ch not in available_letters:
 			return false
 	return true
+
+static var _best_word: String = ""
+
+static func find_longest_word(available_letters: String) -> String:
+	_best_word = ""
+	_depth_first_search(_WORD_TREE, available_letters, "")
+	return _best_word
+
+static func _depth_first_search(node: TrieNode, available: String, current: String) -> void:
+	if node.is_end_of_word and current.length() > _best_word.length():
+		_best_word = current
+	for ch in node.children:
+		if ch in available:
+			_depth_first_search(node.children[ch], available, current + ch)

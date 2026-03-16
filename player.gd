@@ -80,6 +80,10 @@ func handle_input(event: InputEvent):
 	if event.is_pressed() and event.as_text() == "Ctrl+R":
 		shuffle_hand()
 
+	if event.is_pressed() and event.as_text() == "Ctrl+F":
+		var longest_word = WordListHelper.find_longest_word(get_typed_word_str(hand_ui))
+		print(longest_word)
+
 	if event.is_pressed() and event.as_text() in LetterTile.ALPHABET:
 		type_letter(event.as_text())
 
